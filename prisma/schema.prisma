@@ -1,0 +1,308 @@
+// CyberQuest AI - Prisma Schema
+// Adaptive cybersecurity learning platform
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum MissionDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum MissionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EvidenceType {
+  EMAIL
+  AUTH_LOG
+  DNS
+  FIREWALL
+  EDR
+  NETWORK
+  WEB_LOG
+  FILE
+  NOTE
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  SHORT_ANSWER
+  REASONING
+}
+
+enum ActionType {
+  VIEW_EVIDENCE
+  SEARCH_IOC
+  ASK_AI
+  SUBMIT_HYPOTHESIS
+  SUBMIT_ACTION
+  VIEW_TIMELINE
+  ANNOTATE_EVIDENCE
+  MARK_SUSPICIOUS
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// ============================================================
+// CORE MODELS
+// ============================================================
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  role      UserRole @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  attempts     MissionAttempt[]
+  skills       LearnerSkill[]
+  aiMessages   AIMessage[]
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Mission {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  title       String
+  description String
+  briefing    String            @db.Text
+  difficulty  MissionDifficulty @default(BEGINNER)
+  status      MissionStatus     @default(DRAFT)
+  order       Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  evidence    Evidence[]
+  objectives  MissionObjective[]
+  questions   MissionQuestion[]
+  skills      MissionSkill[]
+  attempts    MissionAttempt[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+model Evidence {
+  id          String       @id @default(cuid())
+  missionId   String
+  type        EvidenceType
+  title       String
+  description String
+  content     Json         // Flexible JSON for different evidence types
+  order       Int          @default(0)
+  isKey       Boolean      @default(false) // Is this a key piece of evidence?
+  createdAt   DateTime     @default(now())
+
+  // Relations
+  mission     Mission      @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@index([missionId])
+  @@index([missionId, order])
+}
+
+model MissionObjective {
+  id          String   @id @default(cuid())
+  missionId   String
+  skill       String
+  description String
+  weight      Float    @default(1.0)
+  order       Int      @default(0)
+
+  // Relations
+  mission     Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@index([missionId])
+}
+
+model MissionQuestion {
+  id          String       @id @default(cuid())
+  missionId   String
+  question    String       @db.Text
+  type        QuestionType @default(MULTIPLE_CHOICE)
+  options     Json?        // For multiple choice
+  correctData Json         // Expected answer data
+  explanation String       @db.Text
+  order       Int          @default(0)
+
+  // Relations
+  mission     Mission       @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  answers     AttemptAnswer[]
+
+  @@index([missionId])
+}
+
+model MissionSkill {
+  id        String  @id @default(cuid())
+  missionId String
+  skill     String
+  weight    Float   @default(1.0)
+
+  // Relations
+  mission   Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@index([missionId])
+  @@unique([missionId, skill])
+}
+
+// ============================================================
+// ATTEMPT / INVESTIGATION MODELS
+// ============================================================
+
+model MissionAttempt {
+  id                String        @id @default(cuid())
+  userId            String
+  missionId         String
+  startedAt         DateTime      @default(now())
+  completedAt       DateTime?
+  status            AttemptStatus @default(IN_PROGRESS)
+  score             Float?
+  investigationScore Float?
+  reasoningScore    Float?
+  accuracyScore     Float?
+
+  // Relations
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mission           Mission             @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  actions           InvestigationAction[]
+  answers           AttemptAnswer[]
+  evaluation        AIEvaluation?
+  aiMessages        AIMessage[]
+
+  @@index([userId])
+  @@index([missionId])
+  @@index([userId, missionId])
+  @@index([status])
+}
+
+model InvestigationAction {
+  id        String     @id @default(cuid())
+  attemptId String
+  action    ActionType
+  targetId  String?    // Evidence ID, question ID, etc.
+  metadata  Json?      // Additional context
+  createdAt DateTime   @default(now())
+
+  // Relations
+  attempt   MissionAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([attemptId, createdAt])
+}
+
+model AttemptAnswer {
+  id         String   @id @default(cuid())
+  attemptId  String
+  questionId String
+  answer     Json     // Flexible answer format
+  isCorrect  Boolean  @default(false)
+  reasoning  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  // Relations
+  attempt    MissionAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question   MissionQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@unique([attemptId, questionId])
+}
+
+model AIEvaluation {
+  id                String   @id @default(cuid())
+  attemptId         String   @unique
+  summary           String   @db.Text
+  strengths         Json     // string[]
+  weaknesses        Json     // string[]
+  misconceptions    Json     // string[]
+  recommendations   Json     // string[]
+  investigationScore Float
+  reasoningScore    Float
+  knowledgeScore    Float
+  overallScore      Float
+  skillDeltas       Json     // { skill: string, delta: number }[]
+  nextMissionSkills Json     // string[]
+  rawResponse       Json?    // Raw AI response for debugging
+  createdAt         DateTime @default(now())
+
+  // Relations
+  attempt           MissionAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+}
+
+// ============================================================
+// LEARNER PROFILE
+// ============================================================
+
+model LearnerSkill {
+  id          String   @id @default(cuid())
+  userId      String
+  skill       String
+  mastery     Float    @default(0.5)  // 0.0 - 1.0
+  confidence  Float    @default(0.5)  // 0.0 - 1.0
+  attempts    Int      @default(0)
+  lastUpdated DateTime @default(now())
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([userId, skill])
+}
+
+// ============================================================
+// AI MESSAGES
+// ============================================================
+
+model AIMessage {
+  id        String      @id @default(cuid())
+  userId    String
+  attemptId String?
+  role      MessageRole
+  content   String      @db.Text
+  metadata  Json?       // Additional context like evidence referenced
+  createdAt DateTime    @default(now())
+
+  // Relations
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt   MissionAttempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([attemptId])
+  @@index([attemptId, createdAt])
+}
