@@ -7,6 +7,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Fallback ensures `prisma generate` works on Vercel even before DATABASE_URL is set
+    // generate only reads schema — it doesn't need a real connection
+    url: process.env["DATABASE_URL"] ?? "postgresql://localhost:5432/placeholder",
   },
 });
