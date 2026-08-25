@@ -1,11 +1,19 @@
+import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaPostgresAdapter } from "@prisma/adapter-ppg";
 import { PrismaClient } from "../app/generated/prisma";
 import { ALL_MISSIONS } from "../lib/mission/data/missions";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL ?? "postgresql://localhost:5432/cyberquest",
-});
+// Prefer DIRECT_DATABASE_URL (standard postgres://) for adapter-pg
+// Fall back to DATABASE_URL with adapter-ppg for prisma+postgres://
+const directUrl = process.env.DIRECT_DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL ?? "";
+const adapter = directUrl
+  ? new PrismaPg({ connectionString: directUrl })
+  : new PrismaPostgresAdapter({ connectionString: databaseUrl });
+
 const prisma = new PrismaClient({ adapter });
+
 
 async function main() {
   console.log("🌱 Seeding CyberQuest AI database...");
@@ -129,7 +137,8 @@ async function main() {
             | "NOTE",
           title: e.title,
           description: e.description,
-          content: e.content,
+          // Prisma 7 requires InputJsonValue - round-trip through JSON serialization
+          content: JSON.parse(JSON.stringify(e.content)) as object,
           order: e.order,
           isKey: e.isKey,
         })),
@@ -143,8 +152,9 @@ async function main() {
           missionId: mission.id,
           question: q.question,
           type: q.type as "MULTIPLE_CHOICE" | "SHORT_ANSWER" | "REASONING",
-          options: q.options ?? null,
-          correctData: q.correctData,
+          // Prisma 7: nullable JSON must use undefined (not null) when absent
+          options: q.options !== null ? (q.options as object) : undefined,
+          correctData: JSON.parse(JSON.stringify(q.correctData)) as object,
           explanation: q.explanation,
           order: q.order,
         })),
