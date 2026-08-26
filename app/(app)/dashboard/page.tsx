@@ -83,25 +83,25 @@ export default async function DashboardPage() {
   const displayName = user.name ?? user.email.split("@")[0];
 
   return (
-    <div className="min-h-screen px-5 py-8 max-w-7xl mx-auto">
+    <div>
 
       {/* ── PAGE HEADER ─────────────────────────────────────────── */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex items-start justify-between mb-10">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
             <span className="text-xs text-slate-500 uppercase tracking-widest font-bold font-mono">
               OPERATOR TERMINAL
             </span>
           </div>
-          <h1 className="text-2xl font-black text-slate-100">
+          <h1 className="text-3xl font-black text-slate-100">
             Welcome back, <span className="gradient-text">{displayName}</span>
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Your investigation dashboard — {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+          <p className="text-slate-500 mt-1.5">
+            Your cybersecurity investigation dashboard
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900/60 text-xs font-mono text-slate-500">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900/60 text-xs font-mono text-slate-500 flex-shrink-0 self-start mt-1">
           <Radio className="w-3 h-3 text-emerald-400 pulse-dot" />
           SYSTEM ONLINE
         </div>

@@ -43,7 +43,7 @@ export default function RootLayout({
             rel="stylesheet"
           />
         </head>
-        <body className="antialiased">
+        <body className="antialiased" suppressHydrationWarning>
           <div className="scan-line" aria-hidden="true" />
           {children}
         </body>

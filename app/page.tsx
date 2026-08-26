@@ -52,12 +52,9 @@ function SectionLabel({ text, color = "text-cyan-400" }: { text: string; color?:
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#060810] text-slate-200 overflow-x-hidden">
-      {/* Scan line */}
-      <div className="scan-line" />
-
       {/* ── NAV ─────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-panel">
-        <div className="max-w-7xl mx-auto px-6 h-[60px] flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-panel border-b border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-8 h-[68px] flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="relative w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center glow-cyan-sm">
@@ -91,7 +88,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ────────────────────────────────────────────────── */}
-      <section className="relative pt-36 pb-24 px-6 overflow-hidden">
+      <section className="relative pt-44 pb-28 px-6 overflow-hidden">
         {/* Layered background */}
         <div className="absolute inset-0 cyber-grid" />
         <div className="absolute inset-0 noise-overlay pointer-events-none" />
@@ -128,7 +125,7 @@ export default function LandingPage() {
             {/* Headline */}
             <motion.h1
               variants={fadeUp}
-              className="text-5xl md:text-7xl font-black tracking-tight mb-6 leading-[1.05]"
+              className="text-6xl md:text-8xl font-black tracking-tight mb-8 leading-[1.02]"
             >
               Cybersecurity isn&apos;t{" "}
               <span className="relative inline-block">
@@ -142,7 +139,7 @@ export default function LandingPage() {
             {/* Subheading */}
             <motion.p
               variants={fadeUp}
-              className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed"
+              className="text-lg md:text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed"
             >
               CyberQuest AI drops you inside real cybersecurity incidents. Analyze
               evidence, reason with an AI tutor, and build skills that actually work
